@@ -24,12 +24,15 @@ export type User = {
 
 type AuthContextType = {
   user: User | null;
+  setUser: (user: User) => void;
   isLoading: boolean;
   isAuthenticated: boolean;
+  isVerified: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  resendVerification: () => Promise<void>;
 };
 
 type LoginCredentials = {
@@ -98,14 +101,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   }
 
+  async function resendVerification() {
+    if (!user?.email) {
+      throw new Error("No user email found");
+    }
+
+    await AuthService.resendVerification(user.email);
+  }
+
   const value: AuthContextType = {
     user,
+    setUser,
     isLoading,
     isAuthenticated: !!user,
+    isVerified: !!user?.isEmailVerified,
     login,
     register,
     logout,
     refreshUser,
+    resendVerification,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

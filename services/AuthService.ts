@@ -38,3 +38,7 @@ export async function loadUser() {
   const { data } = await axios.get("/user");
   return data.data;
 }
+
+export async function resendVerification(email: string) {
+  await axios.post("/email/resend", { email });
+}

@@ -6,11 +6,12 @@ import { NavigationContainer } from "@react-navigation/native";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ActivityIndicator, View } from "react-native";
 import RegisterScreen from "./screens/auth/RegisterScreen";
+import EmailVerificationNoticeScreen from "./screens/auth/EmailVerificationNotice";
 
 const Stack = createNativeStackNavigator();
 
 function Navigation() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isVerified, isLoading } = useAuth();
 
   if (isLoading) {
     return (
@@ -22,13 +23,19 @@ function Navigation() {
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: true }}>
-      {isAuthenticated ? (
-        <Stack.Screen name="Chat" component={ChatScreen} />
-      ) : (
+      {!isAuthenticated ? (
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Create account" component={RegisterScreen} />
         </>
+      ) : !isVerified ? (
+        <Stack.Screen
+          name="EmailVerificationNotice"
+          component={EmailVerificationNoticeScreen}
+          options={{ gestureEnabled: false }}
+        />
+      ) : (
+        <Stack.Screen name="Chat" component={ChatScreen} />
       )}
     </Stack.Navigator>
   );

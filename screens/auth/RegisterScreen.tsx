@@ -5,7 +5,6 @@ import { useContext, useState } from "react";
 import { isAxiosError } from "axios";
 import { useAuth } from "../../contexts/AuthContext";
 import { NavigationContext } from "@react-navigation/native";
-import { register } from "../../services/AuthService";
 
 type RegisterErrors = {
   username?: string[];
@@ -37,6 +36,8 @@ export default function RegisterScreen() {
         email,
         password,
       });
+
+      navigation?.navigate("EmailVerificationNotice");
     } catch (e) {
       if (isAxiosError(e) && e.response?.status === 422) {
         setErrors(e.response.data.errors);
