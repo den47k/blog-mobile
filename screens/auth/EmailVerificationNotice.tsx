@@ -1,8 +1,8 @@
+import { useState, useEffect } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../../contexts/AuthContext";
-import { useState, useEffect } from "react";
-import echo from "../../lib/echo";
+import { useAuth } from "@/contexts/AuthContext";
+import echo from "@/lib/echo";
 
 export default function EmailVerificationNoticeScreen() {
   const { user, setUser, logout, resendVerification } = useAuth();

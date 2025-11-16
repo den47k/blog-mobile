@@ -1,8 +1,8 @@
 import axiosLib from "axios";
-import { getToken } from "../services/TokenService";
+import { getToken } from "@/services/TokenService";
 
 const axios = axiosLib.create({
-  baseURL: "http://localhost/api",
+  baseURL: process.env.EXPO_PUBLIC_API_URL,
   headers: {
     Accept: "application/json",
   },

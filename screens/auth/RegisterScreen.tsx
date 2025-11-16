@@ -1,9 +1,9 @@
 import { View, StyleSheet, Button, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import FormTextField from "../../components/FormTextField";
+import FormTextField from "@/components/FormTextField";
 import { useContext, useState } from "react";
 import { isAxiosError } from "axios";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { NavigationContext } from "@react-navigation/native";
 
 type RegisterErrors = {

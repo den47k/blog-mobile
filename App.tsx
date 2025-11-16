@@ -1,12 +1,13 @@
-import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import LoginScreen from "./screens/auth/LoginScreen";
-import ChatScreen from "./screens/ChatScreen";
-import { NavigationContainer } from "@react-navigation/native";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ActivityIndicator, View } from "react-native";
-import RegisterScreen from "./screens/auth/RegisterScreen";
-import EmailVerificationNoticeScreen from "./screens/auth/EmailVerificationNotice";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { NavigationContainer } from "@react-navigation/native";
+
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import LoginScreen from "@/screens/auth/LoginScreen";
+import ChatScreen from "@/screens/ChatScreen";
+import RegisterScreen from "@/screens/auth/RegisterScreen";
+import EmailVerificationNoticeScreen from "@/screens/auth/EmailVerificationNotice";
 
 const Stack = createNativeStackNavigator();
 

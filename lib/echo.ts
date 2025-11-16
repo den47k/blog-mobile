@@ -1,6 +1,5 @@
 import Echo from "laravel-echo";
 import Pusher from "pusher-js";
-// import { Pusher } from "@pusher/pusher-websocket-react-native";
 import type { Channel } from "pusher-js";
 import axios from "./api";
 
@@ -12,15 +11,15 @@ declare global {
 }
 
 const initializeEcho = () => {
-  global.Pusher = Pusher;
+  window.Pusher = Pusher;
 
   return new Echo({
     broadcaster: "reverb",
-    key: "a0vzxemyeuf7lrjvrrhd",
-    wsHost: "localhost",
-    wsPort: 8080,
-    wssPort: 8080,
-    forceTLS: false,
+    key: process.env.EXPO_PUBLIC_REVERB_APP_KEY,
+    wsHost: process.env.EXPO_PUBLIC_REVERB_HOST,
+    wsPort: process.env.EXPO_PUBLIC_REVERB_PORT,
+    wssPort: process.env.EXPO_PUBLIC_REVERB_PORT,
+    forceTLS: (process.env.EXPO_PUBLIC_REVERB_SCHEME ?? "https") === "https",
     enabledTransports: ["ws", "wss"],
     authorizer: (channel: Channel, options: any) => {
       return {

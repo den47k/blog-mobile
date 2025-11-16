@@ -6,8 +6,8 @@ import React, {
   useState,
 } from "react";
 import { Platform } from "react-native";
-import { clearToken, getToken } from "../services/TokenService";
-import * as AuthService from "../services/AuthService";
+import { clearToken, getToken } from "@/services/TokenService";
+import * as AuthService from "@/services/AuthService";
 
 export type User = {
   id: string;

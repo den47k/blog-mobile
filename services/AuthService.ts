@@ -1,4 +1,4 @@
-import axios from "../lib/api";
+import axios from "@/lib/api";
 import { getToken, setToken } from "./TokenService";
 
 export async function login(credentials: {

@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, Button } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ChatScreen() {
   const { user, logout } = useAuth();
