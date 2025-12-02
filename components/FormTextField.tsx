@@ -3,7 +3,7 @@ import {
   Text,
   StyleSheet,
   TextInput,
-  TextInputProps,
+  type TextInputProps,
 } from "react-native";
 
 interface FormTextFieldProps extends TextInputProps {
@@ -19,7 +19,12 @@ export default function FormTextField({
   return (
     <View>
       {label && <Text style={styles.label}>{label}</Text>}
-      <TextInput style={styles.textInput} autoCapitalize="none" {...rest} />
+      <TextInput
+        style={[styles.textInput, errors.length > 0 && styles.textInputError]}
+        autoCapitalize="none"
+        placeholderTextColor="#94a3b8"
+        {...rest}
+      />
       {errors.map((err) => {
         return (
           <Text key={err} style={styles.error}>
@@ -32,18 +37,29 @@ export default function FormTextField({
 }
 
 const styles = StyleSheet.create({
-  label: { color: "#334155", fontWeight: 500 },
+  label: {
+    color: "#475569",
+    fontWeight: "600",
+    fontSize: 14,
+    marginBottom: 8,
+  },
   textInput: {
-    backgroundColor: "#f1f5f9",
-    height: 40,
-    marginTop: 4,
+    backgroundColor: "#f8fafc",
+    height: 48,
     borderWidth: 1,
-    borderRadius: 4,
-    borderColor: "#cbd5e1",
-    padding: 10,
+    borderRadius: 10,
+    borderColor: "#e2e8f0",
+    paddingHorizontal: 16,
+    fontSize: 15,
+    color: "#1e293b",
+  },
+  textInputError: {
+    borderColor: "#ef4444",
+    backgroundColor: "#fef2f2",
   },
   error: {
-    color: "red",
-    marginTop: 2,
+    color: "#ef4444",
+    marginTop: 6,
+    fontSize: 13,
   },
 });

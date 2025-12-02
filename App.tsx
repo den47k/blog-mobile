@@ -5,11 +5,14 @@ import { NavigationContainer } from "@react-navigation/native";
 
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoginScreen from "@/screens/auth/LoginScreen";
-import ChatScreen from "@/screens/ChatScreen";
 import RegisterScreen from "@/screens/auth/RegisterScreen";
 import EmailVerificationNoticeScreen from "@/screens/auth/EmailVerificationNotice";
+import { RootStackParamList } from "./types/navigation";
+import ConversationListScreen from "./screens/chat/ConversationListScreen";
+import ConversationScreen from "./screens/chat/ConversationScreen";
+import UserSearchScreen from "./screens/chat/UserSearchScreen";
 
-const Stack = createNativeStackNavigator();
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 function Navigation() {
   const { isAuthenticated, isVerified, isLoading } = useAuth();
@@ -23,7 +26,7 @@ function Navigation() {
   }
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: true }}>
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
       {!isAuthenticated ? (
         <>
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -36,7 +39,19 @@ function Navigation() {
           options={{ gestureEnabled: false }}
         />
       ) : (
-        <Stack.Screen name="Chat" component={ChatScreen} />
+        <>
+          <Stack.Screen
+            name="ConversationList"
+            component={ConversationListScreen}
+            options={{ headerShown: true, headerTitle: () => null }}
+          />
+          <Stack.Screen
+            name="Conversation"
+            component={ConversationScreen}
+            options={{ headerShown: true }}
+          />
+          <Stack.Screen name="UserSearch" component={UserSearchScreen} />
+        </>
       )}
     </Stack.Navigator>
   );

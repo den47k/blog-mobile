@@ -8,19 +8,7 @@ import React, {
 import { Platform } from "react-native";
 import { clearToken, getToken } from "@/services/TokenService";
 import * as AuthService from "@/services/AuthService";
-
-export type User = {
-  id: string;
-  name: string;
-  tag: string;
-  email: string;
-  avatar: {
-    original: string;
-    medium: string;
-    small: string;
-  } | null;
-  isEmailVerified: boolean | null;
-};
+import { User } from "@/types";
 
 type AuthContextType = {
   user: User | null;
