@@ -9,6 +9,7 @@ import { Platform } from "react-native";
 import { clearToken, getToken } from "@/services/TokenService";
 import * as AuthService from "@/services/AuthService";
 import { User } from "@/types";
+import ChatEventService from "@/services/ChatEventService";
 
 type AuthContextType = {
   user: User | null;
@@ -60,6 +61,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (user?.id) {
+      ChatEventService.start(String(user.id));
+      return () => {
+        ChatEventService.stop();
+      };
+    }
+
+    ChatEventService.stop();
+  }, [user?.id]);
 
   async function login(credentials: LoginCredentials) {
     const deviceName = `${Platform.OS} ${Platform.Version}`;

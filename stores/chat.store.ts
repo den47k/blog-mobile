@@ -92,6 +92,8 @@ export const useChatStore = create<ChatState & ChatActions>()(
         const isCurrentUserMessage = message.senderId === currentUserId;
         const isActiveConversation = state.activeConversationId === convoId;
 
+        console.log(isCurrentUserMessage, state.activeConversationId);
+
         conversation.hasUnread = !isCurrentUserMessage && !isActiveConversation;
 
         state.conversationOrder = [

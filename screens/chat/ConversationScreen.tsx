@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 import { useConversation as useConversationFromStore } from "@/stores/chat.store";
 import type { Message as ApiMessage } from "@/types";
+import echo from "@/lib/echo";
 import {
   fetchMessagesByPage,
   fetchMessagesFirstPage,
@@ -33,6 +34,7 @@ import {
 } from "@/services/MessageService";
 import { markConversationAsRead } from "@/services/ConversationService";
 import { useChatStore } from "@/stores/chat.store";
+import { useFocusEffect } from "@react-navigation/native";
 
 type Props = NativeStackScreenProps<RootStackParamList, "Conversation">;
 
@@ -73,6 +75,16 @@ export default function ConversationScreen({ route, navigation }: Props) {
 
   const [messages, setMessages] = useState<ApiMessage[]>([]);
   const [editingMessage, setEditingMessage] = useState<ApiMessage | null>(null);
+
+  const updateConversationOnNewMessage = useChatStore(
+    (state) => state.updateConversationOnNewMessage,
+  );
+  const updateConversationOnMessageUpdate = useChatStore(
+    (state) => state.updateConversationOnMessageUpdate,
+  );
+  const updateConversationOnMessageDelete = useChatStore(
+    (state) => state.updateConversationOnMessageDelete,
+  );
 
   const title = useMemo(
     () => titleFromConversation(convo, user?.id ?? null),
@@ -130,22 +142,17 @@ export default function ConversationScreen({ route, navigation }: Props) {
     });
   }, [navigation, title]);
 
-  // mark active / read for unread logic
-  useEffect(() => {
-    const unsubFocus = navigation.addListener("focus", async () => {
+  useFocusEffect(
+    useCallback(() => {
       useChatStore.getState().setActiveConversation(conversationId);
-      await markConversationAsRead(conversationId);
-    });
+      void markConversationAsRead(conversationId);
 
-    const unsubBlur = navigation.addListener("blur", () => {
-      useChatStore.getState().setActiveConversation(null);
-    });
-
-    return () => {
-      unsubFocus();
-      unsubBlur();
-    };
-  }, [navigation, conversationId]);
+      // ✅ runs on blur AND on unmount (going back)
+      return () => {
+        useChatStore.getState().setActiveConversation(null);
+      };
+    }, [conversationId]),
+  );
 
   // fetch messages (page 1)
   useEffect(() => {
@@ -184,6 +191,91 @@ export default function ConversationScreen({ route, navigation }: Props) {
     setEditingMessage(null);
     setText("");
   }, [conversationId]);
+
+  useEffect(() => {
+    if (!conversationId || !user?.id) return;
+
+    const channel = echo.private(`conversation.${conversationId}`);
+
+    const handleMessageCreated = (event: { message: ApiMessage }) => {
+      const { message } = event;
+      if (String(message.conversationId) !== String(conversationId)) return;
+
+      updateConversationOnNewMessage(message, user.id);
+
+      setMessages((prev) => {
+        if (prev.some((m) => String(m.id) === String(message.id))) {
+          return prev;
+        }
+        return [message, ...prev];
+      });
+
+      if (String(message.senderId) !== String(user.id)) {
+        void markConversationAsRead(conversationId);
+      }
+    };
+
+    const handleMessageUpdated = (event: { message: ApiMessage }) => {
+      const { message } = event;
+      if (String(message.conversationId) !== String(conversationId)) return;
+
+      updateConversationOnMessageUpdate(message);
+
+      setMessages((prev) =>
+        prev.map((m) =>
+          String(m.id) === String(message.id) ? { ...m, ...message } : m,
+        ),
+      );
+    };
+
+    const handleMessageDeleted = (event: {
+      conversationId: string;
+      deletedId: string;
+      wasLastMessage: boolean;
+      newLastMessage: ApiMessage | null;
+    }) => {
+      const {
+        conversationId: eventConversationId,
+        deletedId,
+        wasLastMessage,
+        newLastMessage,
+      } = event;
+
+      updateConversationOnMessageDelete(
+        eventConversationId,
+        wasLastMessage,
+        newLastMessage,
+        false,
+      );
+
+      if (String(eventConversationId) !== String(conversationId)) {
+        return;
+      }
+
+      setMessages((prev) =>
+        prev.filter((m) => String(m.id) !== String(deletedId)),
+      );
+
+      setEditingMessage((currentEditing) => {
+        if (currentEditing && String(currentEditing.id) === String(deletedId)) {
+          setText("");
+          return null;
+        }
+        return currentEditing;
+      });
+    };
+
+    channel.listen(".MessageCreatedEvent", handleMessageCreated);
+    channel.listen(".MessageUpdatedEvent", handleMessageUpdated);
+    channel.listen(".MessageDeletedEvent", handleMessageDeleted);
+
+    return () => {
+      channel.stopListening(".MessageCreatedEvent", handleMessageCreated);
+      channel.stopListening(".MessageUpdatedEvent", handleMessageUpdated);
+      channel.stopListening(".MessageDeletedEvent", handleMessageDeleted);
+      echo.leave(`conversation.${conversationId}`);
+    };
+  }, [conversationId, user?.id]);
 
   const loadOlderMessages = useCallback(async () => {
     if (isLoading || isFetchingMore || !hasMore) return;

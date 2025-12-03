@@ -1,5 +1,6 @@
 import axiosLib from "axios";
 import { getToken } from "@/services/TokenService";
+import echo from "./echo";
 
 const axios = axiosLib.create({
   baseURL: process.env.EXPO_PUBLIC_API_URL,
@@ -13,6 +14,10 @@ axios.interceptors.request.use(async (req) => {
 
   if (token !== null) {
     req.headers["Authorization"] = `Bearer ${token}`;
+  }
+
+  if (echo.socketId()) {
+    req.headers["X-Socket-ID"] = echo.socketId();
   }
 
   return req;
