@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
@@ -11,16 +11,16 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { LogOut, User, UserPlus } from "lucide-react-native";
+import { LogOut, UserPlus } from "lucide-react-native";
 import { useAuth } from "@/contexts/AuthContext";
 import type { RootStackParamList } from "@/types/navigation";
-import { LinearGradient } from "expo-linear-gradient";
 
+import UserAvatar from "@/components/UserAvatar";
 import {
   useConversationIds,
   useConversations as useConversationsMap,
 } from "@/stores/chat.store";
-import type { Conversation, User as ApiUser } from "@/types";
+import type { Conversation } from "@/types";
 import { fetchConversations } from "@/services/ConversationService";
 import { formatChatTime } from "@/lib/utils";
 
@@ -66,7 +66,7 @@ export default function ConversationListScreen() {
   const [isBootLoading, setIsBootLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // store → array in correct display order
+  // store to array in correct display order
   const ids = useConversationIds();
   const map = useConversationsMap();
   const conversations = useMemo(
@@ -86,18 +86,6 @@ export default function ConversationListScreen() {
       return title.includes(q) || tag.includes(q) || last.includes(q);
     });
   }, [conversations, searchQuery, user?.id]);
-
-  const getGradientColors = (seed: string): [string, string] => {
-    const gradients: [string, string][] = [
-      ["#667eea", "#764ba2"],
-      ["#f093fb", "#f5576c"],
-      ["#4facfe", "#00f2fe"],
-      ["#43e97b", "#38f9d7"],
-      ["#fa709a", "#fee140"],
-    ];
-    const index = seed.charCodeAt(0) % gradients.length;
-    return gradients[index];
-  };
 
   async function loadConversations() {
     const res = await fetchConversations();
@@ -131,21 +119,23 @@ export default function ConversationListScreen() {
     }
   };
 
-  useLayoutEffect(() => {
+  const applyHeaderOptions = useCallback(() => {
+    console.log(user);
     navigation.setOptions({
       headerStyle: { backgroundColor: "#fff" },
       headerShadowVisible: true,
       headerLeft: () => (
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => console.log("Profile Clicked")}>
-            <LinearGradient
-              colors={["#667eea", "#764ba2"]}
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("Profile")}
+          >
+            <UserAvatar
+              uri={user?.avatar?.small}
+              name={user?.name}
+              size={36}
               style={styles.profileBtn}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <User size={20} color="#fff" />
-            </LinearGradient>
+            />
           </TouchableOpacity>
           <Text style={styles.userName}>{user?.name || "Guest"}</Text>
         </View>
@@ -164,7 +154,13 @@ export default function ConversationListScreen() {
         </View>
       ),
     });
-  }, [navigation, logout, user]);
+  }, [logout, navigation, user?.avatar?.small, user?.name]);
+
+  useEffect(() => {
+    applyHeaderOptions();
+    const unsubscribe = navigation.addListener("focus", applyHeaderOptions);
+    return unsubscribe;
+  }, [applyHeaderOptions, navigation]);
 
   return (
     <View style={styles.container}>
@@ -199,7 +195,7 @@ export default function ConversationListScreen() {
             const lastMessage =
               item.lastMessage?.content?.trim() ||
               (item.lastMessage?.attachment?.urls?.original
-                ? "📎 Attachment"
+                ? "?? Attachment"
                 : "") ||
               "No messages yet";
 
@@ -214,19 +210,13 @@ export default function ConversationListScreen() {
                 }
                 activeOpacity={0.7}
               >
-                {/* Avatar (gradient placeholder for now) */}
-                <LinearGradient
-                  colors={getGradientColors(title)}
+                <UserAvatar
+                  uri={conversationAvatarSmall(item, user?.id)}
+                  name={title}
+                  size={56}
+                  badgeColor={item.hasUnread ? "#22c55e" : undefined}
                   style={styles.avatar}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Text style={styles.avatarText}>
-                    {title[0]?.toUpperCase()}
-                  </Text>
-
-                  {item.hasUnread ? <View style={styles.unreadDot} /> : null}
-                </LinearGradient>
+                />
 
                 <View style={styles.chatInfo}>
                   <View style={styles.row}>
@@ -316,19 +306,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
-  avatarText: { color: "#fff", fontSize: 20, fontWeight: "700" },
-  unreadDot: {
-    position: "absolute",
-    right: 3,
-    top: 3,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: "#22c55e",
-    borderWidth: 2,
-    borderColor: "#fff",
-  },
-
   chatInfo: { flex: 1 },
   row: {
     flexDirection: "row",

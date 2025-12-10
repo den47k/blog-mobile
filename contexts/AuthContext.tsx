@@ -4,6 +4,8 @@ import React, {
   useContext,
   useEffect,
   useState,
+  type Dispatch,
+  type SetStateAction,
 } from "react";
 import { Platform } from "react-native";
 import { clearToken, getToken } from "@/services/TokenService";
@@ -13,14 +15,14 @@ import ChatEventService from "@/services/ChatEventService";
 
 type AuthContextType = {
   user: User | null;
-  setUser: (user: User) => void;
+  setUser: Dispatch<SetStateAction<User | null>>;
   isLoading: boolean;
   isAuthenticated: boolean;
   isVerified: boolean;
   login: (credentials: LoginCredentials) => Promise<void>;
   register: (credentials: RegisterCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: () => Promise<User>;
   resendVerification: () => Promise<void>;
 };
 
@@ -99,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function refreshUser() {
     const userData = await AuthService.loadUser();
     setUser(userData);
+    return userData;
   }
 
   async function resendVerification() {

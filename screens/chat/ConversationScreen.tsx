@@ -1,4 +1,4 @@
-import {
+﻿import {
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -147,7 +147,7 @@ export default function ConversationScreen({ route, navigation }: Props) {
       useChatStore.getState().setActiveConversation(conversationId);
       void markConversationAsRead(conversationId);
 
-      // ✅ runs on blur AND on unmount (going back)
+      // âœ… runs on blur AND on unmount (going back)
       return () => {
         useChatStore.getState().setActiveConversation(null);
       };
@@ -487,7 +487,7 @@ export default function ConversationScreen({ route, navigation }: Props) {
             const isMe = String(message.senderId) === String(user?.id);
             const body =
               message.content?.trim() ||
-              (message.attachment?.urls?.original ? "📎 Attachment" : "");
+              (message.attachment?.urls?.original ? "Attachment" : "");
             const isEditingThis =
               editingMessage &&
               String(editingMessage.id) === String(message.id);
@@ -712,3 +712,4 @@ const styles = StyleSheet.create({
   editingBannerText: { color: "#4c1d95", fontSize: 13, fontWeight: "600" },
   editingCancel: { color: "#7c3aed", fontSize: 13, fontWeight: "600" },
 });
+

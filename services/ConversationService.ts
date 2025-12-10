@@ -31,12 +31,21 @@ export async function fetchConversations(): Promise<
 export async function createPrivateConversation(
   userId: string,
   shouldJoinNow: boolean = false,
-): Promise<ServiceResult<true>> {
+): Promise<ServiceResult<Conversation | true>> {
   try {
-    await api.post("/conversations/private", {
+    const res = await api.post("/conversations/private", {
       user_id: userId,
       should_join_now: shouldJoinNow,
     });
+
+    const payload = res.data?.data ?? res.data;
+    const conversation =
+      payload?.conversation ?? (payload?.id ? payload : null) ?? null;
+
+    if (conversation?.id) {
+      // useChatStore.getState().addConversation(conversation as Conversation);
+      return { success: true, data: conversation as Conversation };
+    }
 
     return { success: true, data: true };
   } catch (error) {

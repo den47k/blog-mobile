@@ -11,6 +11,7 @@ import { RootStackParamList } from "./types/navigation";
 import ConversationListScreen from "./screens/chat/ConversationListScreen";
 import ConversationScreen from "./screens/chat/ConversationScreen";
 import UserSearchScreen from "./screens/chat/UserSearchScreen";
+import ProfileScreen from "./screens/chat/ProfileScreen";
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -49,6 +50,11 @@ function Navigation() {
             name="Conversation"
             component={ConversationScreen}
             options={{ headerShown: true }}
+          />
+          <Stack.Screen
+            name="Profile"
+            component={ProfileScreen}
+            options={{ headerShown: false }}
           />
           <Stack.Screen name="UserSearch" component={UserSearchScreen} />
         </>

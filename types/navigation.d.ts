@@ -5,4 +5,5 @@ export type RootStackParamList = {
   ConversationList: undefined;
   UserSearch: undefined;
   Conversation: { conversationId: string; userName: string };
+  Profile: undefined;
 };

@@ -20,6 +20,10 @@ axios.interceptors.request.use(async (req) => {
     req.headers["X-Socket-ID"] = echo.socketId();
   }
 
+  // if (req.data instanceof FormData) {
+  //   req.headers["Content-Type"] = "multipart/form-data";
+  // }
+
   return req;
 });
 

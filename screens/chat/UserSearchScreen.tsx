@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -6,52 +6,21 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Search, ArrowLeft } from "lucide-react-native";
 import type { RootStackParamList } from "@/types/navigation";
-import { LinearGradient } from "expo-linear-gradient";
-
-interface SearchUser {
-  id: string;
-  name: string;
-  tag: string;
-  bio?: string;
-}
-
-const MOCK_USERS: SearchUser[] = [
-  {
-    id: "4",
-    name: "Emma Wilson",
-    tag: "developer",
-    bio: "Full-stack developer",
-  },
-  {
-    id: "5",
-    name: "David Chen",
-    tag: "designer",
-    bio: "UI/UX enthusiast",
-  },
-  {
-    id: "6",
-    name: "Sarah Johnson",
-    tag: "manager",
-    bio: "Product manager at Tech Co",
-  },
-  {
-    id: "7",
-    name: "Mike Brown",
-    tag: "developer",
-    bio: "Backend specialist",
-  },
-  {
-    id: "8",
-    name: "Lisa Martinez",
-    tag: "designer",
-    bio: "Creative director",
-  },
-];
+import { useAuth } from "@/contexts/AuthContext";
+import { searchUsers } from "@/services/UserService";
+import {
+  createPrivateConversation,
+  fetchConversations,
+} from "@/services/ConversationService";
+import type { Conversation, User } from "@/types";
+import UserAvatar from "@/components/UserAvatar";
 
 type NavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -60,31 +29,100 @@ type NavigationProp = NativeStackNavigationProp<
 
 export default function UserSearchScreen() {
   const navigation = useNavigation<NavigationProp>();
+  const { user: currentUser } = useAuth();
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [creatingFor, setCreatingFor] = useState<string | null>(null);
 
-  const filteredUsers = MOCK_USERS.filter(
-    (user) =>
-      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.tag.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
+  useEffect(() => {
+    const query = searchQuery.trim();
+    let isActive = true;
 
-  const getGradientColors = (name: string): [string, string] => {
-    const gradients: [string, string][] = [
-      ["#667eea", "#764ba2"],
-      ["#f093fb", "#f5576c"],
-      ["#4facfe", "#00f2fe"],
-      ["#43e97b", "#38f9d7"],
-      ["#fa709a", "#fee140"],
-    ];
-    const index = name.charCodeAt(0) % gradients.length;
-    return gradients[index];
-  };
+    if (!query) {
+      setSearchResults([]);
+      setIsSearching(false);
+      setSearchError(null);
+      return () => {
+        isActive = false;
+      };
+    }
 
-  const handleStartChat = (user: SearchUser) => {
-    navigation.navigate("Conversation", {
-      userId: user.id,
-      userName: user.name,
-    });
+    setIsSearching(true);
+    setSearchError(null);
+
+    const timer = setTimeout(async () => {
+      const res = await searchUsers(query);
+      if (!isActive) return;
+
+      if (res.success) {
+        const filtered = currentUser
+          ? res.data.filter((u) => String(u.id) !== String(currentUser.id))
+          : res.data;
+        setSearchResults(filtered);
+      } else {
+        console.error("User search failed:", res.error);
+        setSearchError("Could not fetch users. Try again.");
+        setSearchResults([]);
+      }
+      setIsSearching(false);
+    }, 450);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timer);
+    };
+  }, [searchQuery, currentUser?.id]);
+
+  const handleStartChat = async (user: User) => {
+    if (creatingFor) return;
+
+    setCreatingFor(user.id);
+    setSearchError(null);
+
+    try {
+      const res = await createPrivateConversation(user.id);
+      if (!res.success) throw res.error;
+
+      let conversationId: string | null = null;
+
+      if (res.data !== true && (res.data as Conversation)?.id) {
+        conversationId = String((res.data as Conversation).id);
+      }
+
+      if (!conversationId) {
+        const convRes = await fetchConversations();
+        if (convRes.success) {
+          const match = convRes.data.find((convo) =>
+            convo.participants.some(
+              (participant) => String(participant.id) === String(user.id),
+            ),
+          );
+          conversationId = match?.id ?? null;
+        }
+      }
+
+      if (conversationId) {
+        navigation.navigate("Conversation", {
+          conversationId,
+          userName: user.name,
+        });
+      } else {
+        Alert.alert(
+          "Conversation created",
+          "We started the chat but couldn't open it automatically. Please try again from your conversations list.",
+        );
+      }
+    } catch (error) {
+      console.error("Failed to start chat:", error);
+      Alert.alert(
+        "Unable to start chat",
+        "Something went wrong while starting the conversation. Please try again.",
+      );
+    } finally {
+      setCreatingFor(null);
+    }
   };
 
   return (
@@ -112,49 +150,65 @@ export default function UserSearchScreen() {
       </View>
 
       <FlatList
-        data={filteredUsers}
+        data={searchResults}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity
             style={styles.userItem}
             onPress={() => handleStartChat(item)}
             activeOpacity={0.7}
+            disabled={!!creatingFor}
           >
-            <LinearGradient
-              colors={getGradientColors(item.name)}
+            <UserAvatar
+              uri={item.avatar?.small}
+              name={item.name}
+              size={56}
               style={styles.avatar}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            >
-              <Text style={styles.avatarText}>{item.name[0]}</Text>
-            </LinearGradient>
+            />
             <View style={styles.userInfo}>
               <Text style={styles.name}>{item.name}</Text>
-              {item.bio && (
-                <Text style={styles.bio} numberOfLines={1}>
-                  {item.bio}
-                </Text>
-              )}
-              <View style={styles.tagContainer}>
-                <Text style={styles.tagText}>#{item.tag}</Text>
-              </View>
+              <Text style={styles.tagText}>@{item.tag}</Text>
             </View>
             <View style={styles.chatBtn}>
-              <Text style={styles.chatBtnText}>Chat</Text>
+              {creatingFor === item.id ? (
+                <ActivityIndicator color="#fff" size="small" />
+              ) : (
+                <Text style={styles.chatBtnText}>Chat</Text>
+              )}
             </View>
           </TouchableOpacity>
         )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
-            <Search size={48} color="#cbd5e1" />
-            <Text style={styles.emptyText}>
-              {searchQuery
-                ? "No users found"
-                : "Start typing to search for users"}
-            </Text>
+            {isSearching ? (
+              <>
+                <ActivityIndicator size="large" color="#94a3b8" />
+                <Text style={styles.emptyText}>Searching...</Text>
+              </>
+            ) : searchError ? (
+              <>
+                <Text style={styles.emptyText}>{searchError}</Text>
+                <Text style={styles.emptySubtext}>
+                  Please try again in a moment.
+                </Text>
+              </>
+            ) : searchQuery ? (
+              <>
+                <Search size={48} color="#cbd5e1" />
+                <Text style={styles.emptyText}>No users found</Text>
+              </>
+            ) : (
+              <>
+                <Search size={48} color="#cbd5e1" />
+                <Text style={styles.emptyText}>
+                  Start typing to search for users
+                </Text>
+              </>
+            )}
           </View>
         }
         contentContainerStyle={styles.listContent}
+        keyboardShouldPersistTaps="handled"
       />
     </View>
   );
@@ -229,11 +283,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginRight: 12,
   },
-  avatarText: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-  },
   userInfo: {
     flex: 1,
   },
@@ -243,20 +292,8 @@ const styles = StyleSheet.create({
     color: "#1e293b",
     marginBottom: 4,
   },
-  bio: {
-    fontSize: 14,
-    color: "#64748b",
-    marginBottom: 6,
-  },
-  tagContainer: {
-    alignSelf: "flex-start",
-    backgroundColor: "#ede9fe",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
   tagText: {
-    fontSize: 11,
+    fontSize: 12,
     color: "#7c3aed",
     fontWeight: "600",
   },
@@ -282,5 +319,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: "center",
     marginTop: 16,
+  },
+  emptySubtext: {
+    color: "#cbd5e1",
+    fontSize: 13,
+    textAlign: "center",
+    marginTop: 8,
   },
 });
