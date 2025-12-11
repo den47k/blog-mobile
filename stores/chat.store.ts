@@ -153,7 +153,6 @@ export const useChatStore = create<ChatState & ChatActions>()(
     setActiveConversation: (conversationId) =>
       set((state) => {
         state.activeConversationId = conversationId;
-        // Mark as read when opened
         if (conversationId && state.conversations[conversationId]) {
           state.conversations[conversationId].hasUnread = false;
         }

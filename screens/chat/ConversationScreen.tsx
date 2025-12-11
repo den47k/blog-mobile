@@ -147,14 +147,12 @@ export default function ConversationScreen({ route, navigation }: Props) {
       useChatStore.getState().setActiveConversation(conversationId);
       void markConversationAsRead(conversationId);
 
-      // âœ… runs on blur AND on unmount (going back)
       return () => {
         useChatStore.getState().setActiveConversation(null);
       };
     }, [conversationId]),
   );
 
-  // fetch messages (page 1)
   useEffect(() => {
     let mounted = true;
 
@@ -712,4 +710,3 @@ const styles = StyleSheet.create({
   editingBannerText: { color: "#4c1d95", fontSize: 13, fontWeight: "600" },
   editingCancel: { color: "#7c3aed", fontSize: 13, fontWeight: "600" },
 });
-

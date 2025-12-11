@@ -39,7 +39,6 @@ function getOtherParticipant(
 
 function conversationTitle(convo: Conversation, currentUserId?: string | null) {
   const other = getOtherParticipant(convo, currentUserId);
-  // For private chats, backend often gives both: title + participants. Prefer "other user".
   if (other) return other.name;
   return convo.title || "Conversation";
 }
@@ -54,7 +53,6 @@ function conversationAvatarSmall(
   currentUserId?: string | null,
 ) {
   const other = getOtherParticipant(convo, currentUserId);
-  // convo.avatar is { original/medium/small }, user.avatar too
   return convo.avatar?.small ?? other?.avatar?.small ?? null;
 }
 
@@ -89,7 +87,6 @@ export default function ConversationListScreen() {
 
   async function loadConversations() {
     const res = await fetchConversations();
-    // store hydration happens inside the service
     if (!res.success) console.error("fetchConversations failed:", res.error);
   }
 

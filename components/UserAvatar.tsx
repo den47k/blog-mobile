@@ -147,9 +147,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
-  image: {
-    // No resizeMode needed with expo-image
-  },
+  image: {},
   fallback: {
     alignItems: "center",
     justifyContent: "center",
