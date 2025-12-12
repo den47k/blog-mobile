@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import {
   StyleSheet,
   Text,
@@ -37,18 +37,23 @@ function initialsFromName(name?: string | null) {
   return `${parts[0][0]?.toUpperCase() ?? ""}${parts[1][0]?.toUpperCase() ?? ""}`;
 }
 
-export default function UserAvatar({
-  uri,
-  name,
-  size = 48,
-  style,
-  badgeColor,
-}: Props) {
+function UserAvatar({ uri, name, size = 48, style, badgeColor }: Props) {
   const [authToken, setAuthToken] = useState<string | null>(null);
   const [isTokenReady, setIsTokenReady] = useState(false);
   const [failed, setFailed] = useState(false);
 
-  const showImage = !!uri && !!authToken && isTokenReady && !failed;
+  const imageSource = useMemo(
+    () =>
+      uri && authToken
+        ? {
+            uri,
+            headers: { Authorization: `Bearer ${authToken}` },
+          }
+        : null,
+    [authToken, uri],
+  );
+
+  const showImage = !!imageSource && isTokenReady && !failed;
 
   useEffect(() => {
     let isMounted = true;
@@ -76,7 +81,7 @@ export default function UserAvatar({
 
   useEffect(() => {
     setFailed(false);
-  }, [uri, authToken]);
+  }, [imageSource]);
 
   const gradient = useMemo(() => {
     const index =
@@ -98,10 +103,8 @@ export default function UserAvatar({
     >
       {showImage ? (
         <Image
-          source={{
-            uri,
-            headers: { Authorization: `Bearer ${authToken}` },
-          }}
+          source={imageSource!}
+          cachePolicy="memory-disk"
           style={[
             styles.image,
             { width: size, height: size, borderRadius: size / 2 },
@@ -141,6 +144,8 @@ export default function UserAvatar({
     </View>
   );
 }
+
+export default memo(UserAvatar);
 
 const styles = StyleSheet.create({
   wrapper: {
